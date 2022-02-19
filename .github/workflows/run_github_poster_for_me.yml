@@ -1,0 +1,70 @@
+name: Run Poster Generate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+env:
+  # please change to your own config.
+  # this actions generate only this year
+  # If you fork this please change the type to yours below
+  TYPE: "ns, issue, strava, github, pass" # support strava/gpx/ns/cichang/shanbay/duolingo/issue/leetcode/twitter/github/gitlab/kindle/bilibili/wakatime/dota2/forest, Please change the 'pass' it to your own separated by commas
+  ME: yeshu
+  GITHUB_NAME: xdlrt
+  GITHUB_EMAIL: xdlrt0111@163.com
+
+jobs:
+  sync:
+    name: Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.6
+
+      # from pdm
+      - name: Set Variables
+        id: set_variables
+        run: |
+          echo "::set-output name=PY::$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')"
+          echo "::set-output name=PIP_CACHE::$(pip cache dir)"
+      - name: Cache PIP
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.set_variables.outputs.PIP_CACHE }}
+          key: Ubuntu-pip-${{ steps.set_variables.outputs.PY }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+
+      - name: Run sync twitter script
+        if: contains(env.TYPE, 'twitter')
+        run: |
+          python -m github_poster twitter --twitter_user_name ${{ secrets.TWITTER_USER_NAME }} --me ${{ env.ME }} --with-animation --with-skyline
+
+      # change the types to yours
+      - name: Run sync multiple script
+        if: contains(env.TYPE, 'multiple')
+        run: |
+          python3 -m github_poster multiple --types "github, twitter" --github_user_name ${{ secrets.G_USER_NAME }} --twitter_user_name ${{ secrets.TWITTER_USER_NAME }} --year 2019-2021
+
+      - name: Mv svg files to examples
+        # only for me to show
+        if: github.repository_owner == 'xdlrt'
+        run: mv OUT_FOLDER/*.svg examples/ && mv OUT_FOLDER/*.stl examples/
+
+      - name: Push new svg posters
+        uses: github-actions-x/commit@v2.6
+        with:
+          github-token: ${{ secrets.G_T }}
+          commit-message: "Make new poster"
+          files: examples OUT_FOLDER
+          rebase: "true"
+          name: ${{ env.GITHUB_NAME }}
+          email: ${{ env.GITHUB_EMAIL }}
