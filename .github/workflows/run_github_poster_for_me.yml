@@ -116,7 +116,7 @@ jobs:
       - name: Run sync dota2 script
         if: contains(env.TYPE, 'dota2')
         run: |
-          python3 -m github_poster dota2 --dota2_id "${{ secrets.DOTA2_ID }}" --me ${{ env.ME }}
+          python3 -m github_poster dota2 --dota2_id "${{ secrets.DOTA2_ID }}" --year 2013-2022 --me ${{ env.ME }}
 
       - name: Run sync notion script
         if: contains(env.TYPE, 'notion')
