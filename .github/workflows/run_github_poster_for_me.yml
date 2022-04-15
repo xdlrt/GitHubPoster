@@ -19,6 +19,8 @@ jobs:
     name: Sync
     runs-on: ubuntu-latest
     steps:
+      - name: workaround for git permission
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Python
@@ -42,8 +44,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
         if: steps.pip-cache.outputs.cache-hit != 'true'
-      - name: set git config
-        run: git config --global --add safe.directory /github/workspace
 
       - name: Run sync ns script
         if: contains(env.TYPE, 'ns')
